@@ -1,5 +1,5 @@
-#ifndef _SHIFT_STEPPER_MOTOR_H_
-#define _SHIFT_STEPPER_MOTOR_H_
+#ifndef _SHIFT_STEPPER_MOTOR_CONTROLLER_H_
+#define _SHIFT_STEPPER_MOTOR_CONTROLLER_H_
 
 #include <stdint.h>
 #include "shift_register.h"
