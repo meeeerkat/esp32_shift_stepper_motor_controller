@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "driver/gpio.h"
-#include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
 
@@ -28,6 +27,10 @@ void task(void* args) {
     for (uint8_t id=0; id < ssmc->motors_nb; id++) {
       shift_stepper_motor_t* motor = &ssmc->motors[id];
       if (motor->steps_todo != 0) {
+
+        if (abs(motor->steps_todo) == 1) {
+          xQueueSend(ssmc->finished_movement_queue, &id, 0);
+        }
 
         if (motor->steps_todo < 0) {
           motor->current_step--;
@@ -54,12 +57,13 @@ void task(void* args) {
 
 
 
-void shift_stepper_motor_controller__init(shift_stepper_motor_controller_t* ssmc, uint8_t motors_nb, shift_register_t* sr, uint16_t period) {
+void shift_stepper_motor_controller__init(shift_stepper_motor_controller_t* ssmc, uint8_t motors_nb, shift_register_t* sr, uint16_t period, size_t finished_movement_queue_length) {
   ssmc->motors_nb = motors_nb;
   ssmc->sr = sr;
   ssmc->period = period;
   // current_steps and steps_todo all set to 0
   memset(ssmc->motors, 0, MAX_MOTORS_NB*sizeof(shift_stepper_motor_t));
+  ssmc->finished_movement_queue = xQueueCreate(finished_movement_queue_length, sizeof(uint8_t));
 
   xTaskCreate(task, "task_shift_stepper_motor_controller", 2048, ssmc, 10, NULL);
 }
@@ -69,4 +73,7 @@ void shift_stepper_motor_controller__move(shift_stepper_motor_controller_t* ssmc
 //  ssmc->motors[motor_id].callback = callback;
 }
 
+QueueHandle_t* shift_stepper_motor_controller_finished_movement_queue(shift_stepper_motor_controller_t* ssmc) {
+  return &ssmc->finished_movement_queue;
+}
 
