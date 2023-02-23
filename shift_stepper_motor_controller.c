@@ -43,7 +43,7 @@ void task(void* args) {
 
         // Inv of control bits so that motor 0's outputs are the first 4 pins of the first 8bit shift register
         // -> adding shift registers (to add motors) doesn't change the pins or ids for motors already in place
-        command_bits |= stepper_command[motor->current_step%4] << (ssmc->sr->bits_nb - (id+1)*4);
+        command_bits |= stepper_command[((motor->current_step%4) + 4)%4] << (ssmc->sr->bits_nb - (id+1)*4);
       }
     }
 
