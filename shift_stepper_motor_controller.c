@@ -26,20 +26,16 @@ void task(void* args) {
     uint64_t command_bits = 0;
     for (uint8_t id=0; id < ssmc->motors_nb; id++) {
       shift_stepper_motor_t* motor = &ssmc->motors[id];
-      if (motor->steps_todo != 0) {
+      const int64_t steps_todo = motor->aimed_step - motor->current_step;
+      if (steps_todo != 0) {
 
-        if (abs(motor->steps_todo) == 1) {
+        if (abs(steps_todo) == 1)
           xQueueSend(ssmc->finished_movement_queue, &id, 0);
-        }
 
-        if (motor->steps_todo < 0) {
+        if (steps_todo < 0)
           motor->current_step--;
-          motor->steps_todo++;
-        }
-        else {
+        else
           motor->current_step++;
-          motor->steps_todo--;
-        }
 
         // Inv of control bits so that motor 0's outputs are the first 4 pins of the first 8bit shift register
         // -> adding shift registers (to add motors) doesn't change the pins or ids for motors already in place
@@ -69,8 +65,13 @@ void shift_stepper_motor_controller__init(shift_stepper_motor_controller_t* ssmc
 }
 
 void shift_stepper_motor_controller__move(shift_stepper_motor_controller_t* ssmc, uint8_t motor_id, int64_t steps_todo) {
-  ssmc->motors[motor_id].steps_todo = steps_todo;
-//  ssmc->motors[motor_id].callback = callback;
+  shift_stepper_motor_t* motor = &ssmc->motors[motor_id];
+  motor->aimed_step = motor->current_step + steps_todo;
+}
+
+void shift_stepper_motor_controller__moveto(shift_stepper_motor_controller_t* ssmc, uint8_t motor_id, int64_t aimed_position) {
+  shift_stepper_motor_t* motor = &ssmc->motors[motor_id];
+  motor->aimed_step = aimed_position;
 }
 
 QueueHandle_t* shift_stepper_motor_controller_finished_movement_queue(shift_stepper_motor_controller_t* ssmc) {
